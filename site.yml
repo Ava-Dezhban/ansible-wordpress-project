@@ -1,0 +1,6 @@
+---
+- name: Deploy WordPress Site
+  hosts: myservers
+  become: yes
+  roles:
+    - wordpress

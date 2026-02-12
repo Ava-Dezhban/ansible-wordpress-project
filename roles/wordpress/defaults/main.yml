@@ -1,0 +1,7 @@
+---
+db_name: wordpress_db
+db_user: wp_admin
+db_password: 123
+http_port: 8888
+server_hostname: localhost
+document_root: /var/www/html/wordpress

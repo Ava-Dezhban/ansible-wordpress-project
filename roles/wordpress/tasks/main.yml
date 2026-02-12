@@ -1,0 +1,63 @@
+---
+- name: Install LAMP stack packages
+  apt:
+    name:
+      - apache2
+      - mariadb-server
+      - php
+      - php-mysql
+      - libapache2-mod-php
+      - python3-pymysql
+    state: present
+    update_cache: yes
+
+- name: Start and enable MariaDB service
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Create WordPress Database
+  mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create WordPress Database User
+  mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Download and extract WordPress
+  unarchive:
+    src: https://wordpress.org/latest.tar.gz
+    dest: /var/www/html
+    remote_src: yes
+    creates: /var/www/html/wordpress
+
+- name: Configure wp-config.php from template
+  template:
+    src: wp-config.php.j2
+    dest: "{{ document_root }}/wp-config.php"
+
+- name: Set permissions for WordPress directory
+  file:
+    path: "{{ document_root }}"
+    owner: www-data
+    group: www-data
+    recurse: yes
+
+- name: Setup Apache VirtualHost
+  template:
+    src: wordpress.conf.j2
+    dest: /etc/apache2/sites-available/wordpress.conf
+  notify: Restart Apache
+
+- name: Enable WordPress site
+  command: a2ensite wordpress.conf
+  args:
+    creates: /etc/apache2/sites-enabled/wordpress.conf
+  notify: Restart Apache
